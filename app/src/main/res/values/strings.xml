@@ -1,3 +1,12 @@
 <resources>
-    <string name="app_name">sukproject</string>
+    <string name="app_name">Weather App</string>
+    <string name="title_weather">Weather</string>
+    <string name="location">St. Paul, MN</string>
+    <string name="temperature">72°</string>
+    <string name="feels_like">Feels like 78°</string>
+    <string name="low_temp">Low 65°</string>
+    <string name="high_temp">High 80°</string>
+    <string name="humidity">Humidity 100%</string>
+    <string name="pressure">Pressure 1023 hPa</string>
+    <string name="weather_icon_desc">Weather condition icon</string>
 </resources>
