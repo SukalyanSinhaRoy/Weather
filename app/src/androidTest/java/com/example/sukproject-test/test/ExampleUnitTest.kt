@@ -1,4 +1,4 @@
-package com.example.sukproject
+package com.example.`sukproject-test`.test
 
 import org.junit.Test
 
