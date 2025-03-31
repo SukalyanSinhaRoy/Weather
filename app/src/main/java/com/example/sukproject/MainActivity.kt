@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,14 +31,15 @@ class MainActivity : ComponentActivity() {
         weatherViewModel.fetchWeather("St. Paul", apiKey)
 
         setContent {
-            WeatherAppUI()
+            WeatherAppUI(weatherViewModel = weatherViewModel)
         }
+
     }
 }
 
 @Composable
 fun WeatherAppUI(weatherViewModel: WeatherViewModel) {
-    val weatherData by weatherViewModel.weatherData.collectAsState()
+    val weatherData = weatherViewModel.weatherData.observeAsState()
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -60,7 +62,7 @@ fun WeatherAppUI(weatherViewModel: WeatherViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        weatherData?.let { data ->
+        weatherData.value?.let { data ->  // Access LiveData using .value
             Text(text = data.name, fontSize = 18.sp, textAlign = TextAlign.Center)
             Spacer(modifier = Modifier.height(8.dp))
 
