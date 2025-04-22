@@ -4,7 +4,6 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -14,10 +13,24 @@ interface WeatherApiService {
     suspend fun getCurrentWeather(
         @Query("q") city: String,
         @Query("appid") apiKey: String,
-        @Query("units") units: String = "imperial" // Get Fahrenheit temperature
+        @Query("units") units: String = "imperial"
     ): WeatherResponse
-}
 
+    @GET("weather")
+    suspend fun getCurrentWeatherByZip(
+        @Query("zip") zip: String,
+        @Query("appid") apiKey: String,
+        @Query("units") units: String = "imperial"
+    ): WeatherResponse
+
+
+    @GET("forecast")
+    suspend fun getForecast(
+        @Query("zip") zip: String,
+        @Query("appid") apiKey: String,
+        @Query("units") units: String = "imperial"
+    ): ForecastListResponse
+}
 
 // Singleton Retrofit Instance
 object RetrofitInstance {

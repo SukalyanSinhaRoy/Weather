@@ -1,12 +1,20 @@
 <resources>
     <string name="app_name">Weather App</string>
     <string name="title_weather">Weather</string>
-    <string name="location">St. Paul, MN</string>
-    <string name="temperature">72°</string>
-    <string name="feels_like">Feels like 78°</string>
-    <string name="low_temp">Low 65°</string>
-    <string name="high_temp">High 80°</string>
-    <string name="humidity">Humidity 100%</string>
-    <string name="pressure">Pressure 1023 hPa</string>
-    <string name="weather_icon_desc">Weather condition icon</string>
+    <string name="title_forecast">16-Day Forecast</string>
+    <string name="weather_icon_desc">Weather icon</string>
+    <string name="feels_like_template">Feels like: %.1f°</string>
+    <string name="low_temp_template">Low: %.1f°</string>
+    <string name="high_temp_template">High: %.1f°</string>
+    <string name="humidity_template">Humidity: %d%%</string>
+    <string name="pressure_template">Pressure: %d hPa</string>
+    <string name="search_hint">Enter 5-digit zip code</string>
+    <string name="search_button">Search</string>
+    <string name="view_forecast">View Forecast</string>
+    <string name="back_to_current">Back to Current</string>
+    <string name="error_title">Error</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="loading">Loading…</string>
+    <string name="forecast_date_format">EEE, MMM d</string>
+    <string name="no_weather_data">No weather data available</string>
 </resources>
