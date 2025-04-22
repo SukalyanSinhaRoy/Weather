@@ -20,16 +20,8 @@ interface WeatherApiService {
     suspend fun getCurrentWeatherByZip(
         @Query("zip") zip: String,
         @Query("appid") apiKey: String,
-        @Query("units") units: String = "imperial"
+        @Query("units") units: String = "metric"
     ): WeatherResponse
-
-
-    @GET("forecast")
-    suspend fun getForecast(
-        @Query("zip") zip: String,
-        @Query("appid") apiKey: String,
-        @Query("units") units: String = "imperial"
-    ): ForecastListResponse
 }
 
 // Singleton Retrofit Instance
