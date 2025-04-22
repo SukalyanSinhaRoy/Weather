@@ -130,6 +130,10 @@ class WeatherViewModel : ViewModel() {
         return zip.length == 5 && zip.all { it.isDigit() }
     }
 
+    fun fetchWeather(city: String, apiKey: String) {
+        fetchWeatherByCity(city, apiKey)
+    }
+
     fun clearError() {
         _errorState.value = null
     }
