@@ -21,8 +21,12 @@ class WeatherViewModel : ViewModel() {
     private val _dailyForecastData = MutableLiveData<ForecastListResponse?>()
     val dailyForecastData: LiveData<ForecastListResponse?> = _dailyForecastData
 
+    private val _sixteenDayForecastData = MutableLiveData<ForecastListResponse?>()
+    val sixteenDayForecastData: LiveData<ForecastListResponse?> = _sixteenDayForecastData
+
     private val _errorState = MutableLiveData<String?>()
     val errorState: LiveData<String?> = _errorState
+
 
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -71,7 +75,7 @@ class WeatherViewModel : ViewModel() {
         }
     }
 
-    fun fetchForecast(apiKey: String) {
+    fun fetchSixteenDayForecast(apiKey: String) {
         if (currentZipCode.isEmpty()) {
             _errorState.postValue("Please search for a location first")
             return
@@ -81,19 +85,12 @@ class WeatherViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
-                    RetrofitInstance.api.getForecast("$currentZipCode,us", apiKey)
+                    RetrofitInstance.api.getForecastSixteenDays("$currentZipCode,us", 16, apiKey)
                 }
-
-                // Store the original response
-                _forecastData.postValue(response)
-
-                // Process the response to group by day
-                val dailyForecast = processForecastByDay(response)
-                _dailyForecastData.postValue(dailyForecast)
-
+                _sixteenDayForecastData.postValue(response)
                 _errorState.postValue(null)
             } catch (e: Exception) {
-                _errorState.postValue("Could not load forecast: ${e.message}")
+                _errorState.postValue("Could not load 16-day forecast: ${e.message}")
                 e.printStackTrace()
             } finally {
                 _isLoading.value = false
@@ -101,30 +98,6 @@ class WeatherViewModel : ViewModel() {
         }
     }
 
-    private fun processForecastByDay(forecastResponse: ForecastListResponse): ForecastListResponse {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-
-        // Group forecast items by day
-        val groupedByDay = forecastResponse.list.groupBy { item ->
-            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).parse(item.dtTxt)
-            dateFormat.format(date)
-        }
-
-        // For each day, select the forecast for midday (or closest to noon)
-        val dailyForecasts = groupedByDay.map { (dateString, items) ->
-            // Find item closest to noon for the day
-            val noonTimeMillis = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-                .parse("$dateString 12:00:00")?.time ?: 0
-
-            items.minByOrNull { item ->
-                val itemTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).parse(item.dtTxt)?.time ?: 0
-                Math.abs(itemTime - noonTimeMillis)
-            } ?: items.first()
-        }
-
-        // Return a new ForecastListResponse with the daily forecasts
-        return ForecastListResponse(forecastResponse.city, dailyForecasts)
-    }
 
     private fun isValidZipCode(zip: String): Boolean {
         return zip.length == 5 && zip.all { it.isDigit() }

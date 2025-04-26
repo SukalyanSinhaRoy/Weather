@@ -204,7 +204,7 @@ fun CurrentWeatherScreen(
 
                 Button(
                     onClick = {
-                        weatherViewModel.fetchForecast(apiKey)
+                        weatherViewModel.fetchSixteenDayForecast(apiKey)
                         navController.navigate("forecast")
                     },
                     modifier = Modifier.padding(16.dp)
@@ -229,7 +229,7 @@ fun ForecastScreen(
     weatherViewModel: WeatherViewModel,
     navController: NavHostController
 ) {
-    val forecastData = weatherViewModel.dailyForecastData.observeAsState()
+    val fullForecastData = weatherViewModel.sixteenDayForecastData.observeAsState()
     val isLoading = weatherViewModel.isLoading.observeAsState(initial = false)
 
     // Create a date formatter that shows only the day name and date
@@ -267,7 +267,7 @@ fun ForecastScreen(
                 }
             }
         } else {
-            forecastData.value?.let { data ->
+            fullForecastData.value?.let { data ->
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp)
