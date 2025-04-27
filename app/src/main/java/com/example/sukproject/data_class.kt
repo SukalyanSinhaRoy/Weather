@@ -1,5 +1,6 @@
 package com.example.sukproject
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -12,14 +13,18 @@ data class WeatherResponse(
 @Serializable
 data class Main(
     val temp: Double,
-    val feels_like: Double,
-    val temp_min: Double,
-    val temp_max: Double,
+    @SerialName("feels_like")
+    val feelsLike: Double,
+    @SerialName("temp_min")
+    val tempMin: Double,
+    @SerialName("temp_max")
+    val tempMax: Double,
     val humidity: Int,
     val pressure: Int
 )
 
 @Serializable
 data class Weather(
-    val description: String
+    val description: String,
+    val icon: String
 )

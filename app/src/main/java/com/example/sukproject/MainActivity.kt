@@ -5,20 +5,31 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : ComponentActivity() {
     private val weatherViewModel: WeatherViewModel by viewModels()
@@ -26,88 +37,311 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Fetch weather data when activity is created
-        weatherViewModel.fetchWeather("St. Paul", apiKey)
-
         setContent {
-            WeatherAppUI(weatherViewModel = weatherViewModel)
+            WeatherApp(weatherViewModel = weatherViewModel, apiKey = apiKey)
         }
-
     }
 }
 
 @Composable
-fun WeatherAppUI(weatherViewModel: WeatherViewModel) {
+fun WeatherApp(weatherViewModel: WeatherViewModel, apiKey: String) {
+    val navController = rememberNavController()
+    val errorState = weatherViewModel.errorState.observeAsState()
+
+    // Show error dialog if there's an error
+    if (!errorState.value.isNullOrEmpty()) {
+        AlertDialog(
+            onDismissRequest = { weatherViewModel.clearError() },
+            title = { Text(text = stringResource(R.string.error_title)) },
+            text = { Text(text = errorState.value!!) },
+            confirmButton = {
+                Button(onClick = { weatherViewModel.clearError() }) {
+                    Text(stringResource(R.string.dismiss))
+                }
+            }
+        )
+    }
+
+    NavHost(navController = navController, startDestination = "currentWeather") {
+        composable("currentWeather") {
+            CurrentWeatherScreen(
+                weatherViewModel = weatherViewModel,
+                apiKey = apiKey,
+                navController = navController
+            )
+        }
+        composable("forecast") {
+            ForecastScreen(
+                weatherViewModel = weatherViewModel,
+                navController = navController
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CurrentWeatherScreen(
+    weatherViewModel: WeatherViewModel,
+    apiKey: String,
+    navController: NavHostController
+) {
     val weatherData = weatherViewModel.weatherData.observeAsState()
+    val isLoading = weatherViewModel.isLoading.observeAsState(initial = false)
+    val context = LocalContext.current
+    var zipCode by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top bar
-        Box(
+        TopAppBar(
+            title = { Text(text = stringResource(R.string.app_name)) },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Zip code input field
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
-                .background(Color.LightGray),
-            contentAlignment = Alignment.CenterStart
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                fontSize = 18.sp,
-                modifier = Modifier.padding(start = 10.dp)
+            OutlinedTextField(
+                value = zipCode,
+                onValueChange = {
+                    if (it.length <= 5 && it.all { char -> char.isDigit() }) {
+                        zipCode = it
+                    }
+                },
+                label = { Text(stringResource(R.string.search_hint)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
             )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Button(
+                onClick = { weatherViewModel.fetchWeatherByZip(zipCode, apiKey) },
+                enabled = zipCode.length == 5 && !isLoading.value
+            ) {
+                Text(stringResource(R.string.search_button))
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        weatherData.value?.let { data ->  // Access LiveData using .value
-            Text(text = data.name, fontSize = 18.sp, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(8.dp))
+        if (isLoading.value) {
+            CircularProgressIndicator()
+            Text(
+                text = stringResource(R.string.loading),
+                modifier = Modifier.padding(16.dp)
+            )
+        } else {
+            weatherData.value?.let { data ->
+                Text(text = data.name, fontSize = 24.sp, textAlign = TextAlign.Center)
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 40.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "${data.main.temp}°", fontSize = 48.sp)
-                    Text(text = "Feels like ${data.main.feels_like}°", fontSize = 16.sp)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "${data.main.temp.toInt()}°", fontSize = 64.sp)
+                        Text(
+                            text = stringResource(R.string.feels_like_template, data.main.feelsLike),
+                            fontSize = 18.sp
+                        )
+                    }
+
+
+                    Image(
+                        painter = painterResource(id = R.drawable.weather_icon),
+                        contentDescription = stringResource(R.string.weather_icon_desc),
+                        modifier = Modifier.size(80.dp)
+                    )
                 }
 
-                Image(
-                    painter = painterResource(id = R.drawable.weather_icon),
-                    contentDescription = stringResource(R.string.weather_icon_desc),
-                    modifier = Modifier.size(50.dp)
+                Spacer(modifier = Modifier.height(30.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = stringResource(R.string.low_temp_template, data.main.tempMin),
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.high_temp_template, data.main.tempMax),
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.humidity_template, data.main.humidity),
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.pressure_template, data.main.pressure),
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        weatherViewModel.fetchSixteenDayForecast(apiKey)
+                        navController.navigate("forecast")
+                    },
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(text = stringResource(R.string.view_forecast))
+                }
+            } ?: run {
+                Text(
+                    text = stringResource(R.string.no_weather_data),
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(16.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 40.dp),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(text = "Low ${data.main.temp_min}°", fontSize = 16.sp)
-                Text(text = "High ${data.main.temp_max}°", fontSize = 16.sp)
-                Text(text = "Humidity ${data.main.humidity}%", fontSize = 16.sp)
-                Text(text = "Pressure ${data.main.pressure} hPa", fontSize = 16.sp)
-            }
-        } ?: run {
-            Text(text = "Loading...", fontSize = 18.sp, textAlign = TextAlign.Center)
         }
     }
 }
 
-@Preview(showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PreviewWeatherAppUI() {
-    val previewViewModel = WeatherViewModel()
-    WeatherAppUI(weatherViewModel = previewViewModel)
+fun ForecastScreen(
+    weatherViewModel: WeatherViewModel,
+    navController: NavHostController
+) {
+    val fullForecastData = weatherViewModel.sixteenDayForecastData.observeAsState()
+    val isLoading = weatherViewModel.isLoading.observeAsState(initial = false)
+
+    // Create a date formatter that shows only the day name and date
+    val dateFormat = stringResource(R.string.forecast_date_format)
+    val dateFormatter = SimpleDateFormat(dateFormat, Locale.US)
+
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        TopAppBar(
+            title = { Text(text = stringResource(R.string.title_forecast)) },
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.back_to_current)
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        )
+
+        if (isLoading.value) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = stringResource(R.string.loading))
+                }
+            }
+        } else {
+            fullForecastData.value?.let { data ->
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp)
+                ) {
+                    items(data.list) { forecastItem ->
+                        ForecastItemCard(forecastItem)
+                    }
+                }
+            } ?: run {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.no_weather_data),
+                        fontSize = 18.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ForecastItemCard(forecastItem: ForecastItemSchema) {
+    val date = Date(forecastItem.dt * 1000L)
+    val dateFormatter = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = dateFormatter.format(date),
+                    fontSize = 18.sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                if (forecastItem.weather.isNotEmpty()) {
+                    Text(
+                        text = forecastItem.weather[0].description.replaceFirstChar { it.uppercase() },
+                        fontSize = 16.sp
+                    )
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${forecastItem.temp.max}°",
+                    fontSize = 20.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${forecastItem.temp.min}°",
+                    fontSize = 16.sp
+                )
+            }
+        }
+    }
+}
+
+// Extension function to capitalize the first letter of a string
+fun String.capitalize(): String {
+    return this.replaceFirstChar {
+        if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+    }
 }
