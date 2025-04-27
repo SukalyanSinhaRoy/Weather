@@ -273,7 +273,7 @@ fun ForecastScreen(
                     contentPadding = PaddingValues(16.dp)
                 ) {
                     items(data.list) { forecastItem ->
-                        ForecastItemCard(forecastItem, dateFormatter)
+                        ForecastItemCard(forecastItem)
                     }
                 }
             } ?: run {
@@ -294,21 +294,9 @@ fun ForecastScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ForecastItemCard(forecastItem: ForecastItem, dateFormatter: SimpleDateFormat) {
-    val date = try {
-        // Parse dtTxt to get the date
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        inputFormat.parse(forecastItem.dtTxt)
-    } catch (e: Exception) {
-        // Fallback to using Unix timestamp if dtTxt parsing fails
-        Date(forecastItem.dt * 1000L)
-    }
-
-    val formattedDate = try {
-        dateFormatter.format(date ?: Date())
-    } catch (e: Exception) {
-        "Invalid date"
-    }
+fun ForecastItemCard(forecastItem: ForecastItemSchema) {
+    val date = Date(forecastItem.dt * 1000L)
+    val dateFormatter = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
 
     Card(
         modifier = Modifier
@@ -323,7 +311,7 @@ fun ForecastItemCard(forecastItem: ForecastItem, dateFormatter: SimpleDateFormat
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = formattedDate,
+                    text = dateFormatter.format(date),
                     fontSize = 18.sp,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                 )
@@ -338,19 +326,18 @@ fun ForecastItemCard(forecastItem: ForecastItem, dateFormatter: SimpleDateFormat
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "${forecastItem.main.temp.toInt()}°",
+                    text = "${forecastItem.temp.max}°",
                     fontSize = 20.sp
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "H: ${forecastItem.main.tempMax.toInt()}° L: ${forecastItem.main.tempMin.toInt()}°",
+                    text = "${forecastItem.temp.min}°",
                     fontSize = 16.sp
                 )
             }
         }
     }
 }
-
 
 // Extension function to capitalize the first letter of a string
 fun String.capitalize(): String {

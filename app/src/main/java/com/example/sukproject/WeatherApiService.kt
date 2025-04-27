@@ -25,21 +25,13 @@ interface WeatherApiService {
         @Query("units") units: String = "metric"
     ): WeatherResponse
 
-
-    @GET("forecast")
-    suspend fun getForecast(
-        @Query("zip") zip: String,
-        @Query("appid") apiKey: String,
-        @Query("units") units: String = "imperial"
-    ): ForecastListResponse
-
     @GET("forecast/daily")
     suspend fun getForecastSixteenDays(
         @Query("q") location: String,
         @Query("cnt") count: Int = 16,
         @Query("appid") apiKey: String,
         @Query("units") units: String = "imperial"
-    ): ForecastListResponse
+    ): SixTeenDayForecast
 
 }
 

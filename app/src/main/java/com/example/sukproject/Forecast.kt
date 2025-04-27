@@ -39,3 +39,47 @@ data class ForecastMain(
     val humidity: Int,
     val pressure: Int
 )
+@Serializable
+
+data class SixTeenDayForecast(
+    val city: City,
+    val cod: String,
+    val message: Double,
+    val cnt: Int,
+    val list: List<ForecastItemSchema>
+)
+@Serializable
+
+data class ForecastItemSchema(
+    val dt: Long,
+    val sunrise: Long,
+    val sunset: Long,
+    val temp: Temperature,
+    val feels_like: FeelsLike,
+    val pressure: Int,
+    val humidity: Int,
+    val weather: List<Weather>,
+    val speed: Double,
+    val deg: Int,
+    val gust: Double,
+    val clouds: Int,
+    val pop: Float
+)
+@Serializable
+
+data class Temperature(
+    val day: Double,
+    val min: Double,
+    val max: Double,
+    val night: Double,
+    val eve: Double,
+    val morn: Double
+)
+@Serializable
+
+data class FeelsLike(
+    val day: Double,
+    val night: Double,
+    val eve: Double,
+    val morn: Double
+)
