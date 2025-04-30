@@ -46,6 +46,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit2.converter.gson)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.constraintlayout)
+    implementation (libs.androidx.constraintlayout.v221)
 
 
     implementation(libs.androidx.core.ktx)
@@ -60,6 +62,8 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.logging.interceptor)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

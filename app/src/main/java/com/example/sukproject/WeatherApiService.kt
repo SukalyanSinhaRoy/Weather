@@ -33,6 +33,22 @@ interface WeatherApiService {
         @Query("units") units: String = "imperial"
     ): SixTeenDayForecast
 
+    @GET("forecast/daily")
+    suspend fun getForecastSixteenDaysByCoordinates(
+        @Query("lat") latitude: String,
+        @Query("lon") longitude: String,
+        @Query("cnt") count: Int = 16,
+        @Query("appid") apiKey: String,
+        @Query("units") units: String = "imperial"
+    ): SixTeenDayForecast
+
+    @GET("weather")
+    suspend fun getCurrentWeatherByCoordinates(
+        @Query("lat") latitude: String,
+        @Query("lon") longitude: String,
+        @Query("appid") apiKey: String,
+        @Query("units") units: String = "metric"
+    ): WeatherResponse
 }
 
 // Singleton Retrofit Instance
